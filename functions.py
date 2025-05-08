@@ -14,11 +14,11 @@ from apps.source_repository.functions import get_source_credential_dict
 
 
 
-app_source_name_pg = 'DPE_METADATA_SYSTEM_INFORMATION'
+app_source_name_pg = 'METADATA_SYSTEM_INFORMATION'
 credentialsDict_pg, srcObj = get_source_credential_dict(None, app_source_name_pg)
 
 
-app_source_name_pg_2 = 'DATA_CENTRAL_DATA_OBSERVABILITY_CONSUMPTION_DB'
+app_source_name_pg_2 = 'DATA_OBSERVABILITY_CONSUMPTION_DB'
 credentialsDict_pg_2, srcObj = get_source_credential_dict(None, app_source_name_pg_2)
 
 
