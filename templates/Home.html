@@ -1,0 +1,988 @@
+{% extends "layouts/base-all-module.html" %}
+
+
+{% block title %} Rule Engine {% endblock %}
+
+
+
+
+<!-- Specific CSS goes HERE -->
+
+
+
+
+
+
+{% block stylesheets %}
+
+
+<link rel="stylesheet" href="{{ ASSETS_ROOT }}/plugins/gijgo/css/gijgo.min.css">
+<link rel="stylesheet" href="{{ ASSETS_ROOT }}/css/data_lineage/style.css">
+
+
+
+
+{% endblock stylesheets %}
+
+
+{% block content %}
+<!-- [ Main Content ] start -->
+<section class="pcoded-main-container">
+    <div class="pcoded-wrapper">
+        <div class="pcoded-content">
+            <div class="pcoded-inner-content">
+                <div class="card">
+                    <!-- [ breadcrumb ] start -->
+                    <div class="card-header">
+                        <h5>Data Lineage</h5>
+                    </div>
+                    <!-- [ breadcrumb ] end -->
+                    <div class="main-body">
+                        <!-- [ Main Content ] start -->
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-xl-3 dp-define-column">
+
+
+
+
+
+
+                                    <div class="" id="permissions-tab">
+                                        <input type="text" id="table-search" autocomplete="on" required=""
+                                            class="form-control text-sm-center" placeholder="Search for Table">
+                                        <!-- <input class="" type="text" id="table-search" autocomplete="on" placeholder="Search . . ." required /> -->
+                                        <br>
+                                        <div class="tab-pane active dp-column-list" id="permission-list-screen"></div>
+                                        <!-- <button type="button" class="btn-primary" onclick="submitcanvas();">submit</button> -->
+                                    </div>
+                                </div>
+                                <div class="col-xl-7">
+                                    <div id="legend" style="background-color: white;  ">
+
+
+                                        <div class="input-group mb-3">
+                                            <input type="text" class="form-control" placeholder="Search Column"
+                                                id="column-search">
+                                            <div class="input-group-append">
+                                                <button class="btn btn-outline-secondary" type="submit"
+                                                    id="columnSearch"><i class="fas fa-search"></i></button>
+                                            </div>
+                                        </div>
+
+
+                                        <div
+                                            style="display: inline-block; width: 10px; height: 10px; background-color: #0000e6; margin-right: 5px;">
+                                        </div>
+                                        <span style="vertical-align: middle;color: black">Permanent</span>
+                                        <div
+                                            style="display: inline-block; width: 10px; height: 10px; background-color: #6666ff; margin-left: 20px; margin-right: 5px;">
+                                        </div>
+                                        <span style="vertical-align: middle;color: black">Transient</span>
+                                        <div
+                                            style="display: inline-block; width: 10px; height: 10px; background-color: #b3b3ff; margin-left: 20px; margin-right: 5px;">
+                                        </div>
+                                        <span style="vertical-align: middle;color: black">Temporary</span>
+                                        <div
+                                            style="display: inline-block; width: 10px; height: 10px; background-color: #808080; margin-left: 20px; margin-right: 5px;">
+                                        </div>
+                                        <span style="vertical-align: middle;color: black">Deleted</span>
+
+
+
+
+
+
+
+                                    </div>
+
+
+                                    <div id="graph" style="height: 680px;">
+
+
+                                    </div>
+                                </div>
+                                <div class="col-xl-2" style="background-color: #f4f7fa;">
+                                    <div class="row" style="display: flex ;justify-content: space-between;">
+                                        <button type="button" onclick="expandBack()"
+                                            style="width: 50%;cursor: pointer;color: white;background-color:#6c757d;border: 1px solid white;height: 10%;"><i
+                                                class="fa-solid fa-angles-left"></i> Expand
+                                            Back</button>
+                                        <button type="button" onclick="expandFront()"
+                                            style="width: 50%;cursor: pointer;color: white;background-color:#6c757d;border: 1px solid white;height: 10%;">Expand
+                                            Front <i class="fa-solid fa-angles-right"></i></button>
+
+
+                                    </div>
+                                    <br>
+                                    <div class="row" id="Nodetabs"
+                                        style="display: flex ;justify-content: space-between;">
+                                        <button type="button" onclick="displayNodeDetails()"
+                                            style="width: 50%;cursor: pointer;color: white;background-color:#6c757d;border: 1px solid white;height: 10%;">Profile</button>
+                                        <button type="button" onclick="displayNodePrivs()"
+                                            style="width: 50%;cursor: pointer;color: white;background-color:#6c757d;border: 1px solid white;height: 10%;">Privileges</button>
+
+
+                                    </div>
+                                    <br>
+
+
+                                    <div id="NodeDeets">
+
+
+                                    </div>
+
+
+
+
+                                </div>
+                            </div>
+
+
+
+
+
+
+
+
+                        </div>
+                    </div>
+                    <div class="modal modal-tour fade" data-keyboard="false" tabindex="-1" role="dialog"
+                        id="dataEventActionModal" aria-labelledby="dataEventActionModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog modal-lg" role="document">
+                            <div class="modal-content rounded-4 shadow">
+                                <div class="modal-header">
+                                    <h4 class="modal-title" id="dataEventActionModalTitle"></h4><button type="button"
+                                        class="close" data-dismiss="modal">&times;</button>
+                                </div>
+                                <div class="modal-body mt-1 mb-3 text-center" id="dataEventActionModalBody"></div>
+
+
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+</section>
+
+
+
+
+
+
+
+
+
+
+{% endblock content %}
+
+
+
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+
+
+
+
+{{json_data|json_script:"pipe_metadata"}}
+
+
+
+
+<script src="{{ ASSETS_ROOT }}/plugins/gijgo/js/gijgo.min.js"></script>
+<script type="text/javascript">
+    //dicts
+    //$("#columnMapping").hide()
+    $("#legend").hide()
+    $("#Nodetabs").hide()
+    let test_json = JSON.parse(document.getElementById('pipe_metadata').textContent);
+    var searchBox = document.getElementById("table-search");
+    var filterSample = '';
+    const networkDetailsElement = document.getElementById("NodeDeets");
+
+
+    var lineage = []
+
+
+    var columnDefs = [
+        {
+            data: "source_column",
+            title: "SOURCE",
+            width: "25%",
+        },
+        {
+            data: "target_column",
+            title: "TARGET",
+            width: "25%",
+        },
+        {
+            data: "description",
+            title: "DEFINITION",
+            width: "25%",
+        },
+        {
+            data: "column_type",
+            title: "TYPE",
+            width: "25%",
+        },
+        {
+            data: "column_logic",
+            title: "LOGIC",
+            width: "25%",
+        }
+    ];
+    var columnDefs2 = [
+        {
+
+
+            title: "PRIVILEGE",
+            width: "30%",
+        },
+        {
+
+
+            title: "USERS",
+            width: "70%",
+        }];
+    var nodes = new vis.DataSet([]);
+
+
+    // create an array with edges
+    var edges = new vis.DataSet([]);
+
+
+    var vis_data = {
+        nodes: nodes,
+        edges: edges
+    };
+
+
+    const container = document.getElementById('graph');
+    var options = {
+        nodes: {
+            shape: 'box',
+            color: {
+
+
+                background: 'darkblue',
+                border: 'black',
+                highlight: {
+
+
+                    background: 'yellow',
+                    border: 'black'
+                }
+            },
+            font: {
+                color: 'black'
+            },
+
+
+        },
+        edges: {
+            arrows: {
+                to: {
+                    enabled: true,
+                    type: 'arrow'
+                }
+            },
+            smooth: {
+                type: 'cubicBezier',
+                roundness: 0.4
+            },
+            align: 'horizontal'
+        },
+        layout: {
+            hierarchical: {
+                direction: 'LR',
+                sortMethod: 'directed',
+                levelSeparation: 500,
+                nodeSpacing: 10
+            }
+        },
+
+
+        interaction: {
+            hover: true,
+            selectConnectedEdges: false,
+            multiselect: false
+        },
+        manipulation: {
+            enabled: true,
+            initiallyActive: false,
+            deleteNode: true,
+            addNode: false,
+            addEdge: false,
+            editNode: undefined,
+            editEdge: false
+        }
+    };
+
+    var network = new vis.Network(container, vis_data, options);
+    var networkCanvas = container.getElementsByTagName("canvas")[0];
+    window.onload = function () {
+        $('#permission-list-screen').html('<div id="permission-tree" style="width:100%;"></div>');
+        var tree = $('#permission-tree').tree({
+            primaryKey: 'id',
+            uiLibrary: 'materialdesign',
+            dataSource: test_json,
+            imageUrlField: 'flagUrl'
+        });
+
+
+        $("#permissions-tab").show();
+        tree.on('select', function (e, node) {
+            $(".dwh-portal-spinner").show();
+            $("#Nodetabs").hide()
+            networkDetailsElement.innerHTML = '';
+            lineage = [];
+            var db_name = node.parent().parent().parent().parent()[0].innerText.split('\n')[0].trim();
+            var schema_name = node.parent().parent()[0].innerText.split('\n')[0].trim();
+            var table_name = node.text().trim()
+
+
+            $.ajax({
+                type: 'POST',
+                url: 'create-lineage/',
+                data: { 'csrfmiddlewaretoken': "{{csrf_token}}", 'db_name': db_name, 'schema_name': schema_name, 'table_name': table_name },
+                success: function (data) {
+                    nodes.clear()
+                    nodes.add(data.nodes)
+                    edges.clear()
+                    edges.add(data.edges)
+                    $("#legend").show()
+                    if (data.nodes.length === 0) {
+                        $("#legend").hide()
+                        $(".dwh-portal-spinner").hide();
+                        $("#dataEventActionModal").modal('show');
+                        $("#dataEventActionModalBody").html('<br><div class="px-md-4 py-md-2" id="finalResponse" class="text-center"></div>');
+                        document.getElementById("finalResponse").innerText = "Lineage not available since No Operation has been performed on the Table."
+                    }
+                    for (let i = 0; i < data.nodes.length; i++) {
+                        lineage.push(data.nodes[i].id)
+                    }
+
+
+
+
+                    //color_level(vis_data)
+                    updateIcon(vis_data)
+                    $(".dwh-portal-spinner").hide();
+                },
+                error: function () {
+                    $(".dwh-portal-spinner").hide();
+                    alert("lineage not available :(")
+
+
+                }
+
+
+            });
+        });
+
+
+
+
+
+
+    }
+    function changeCursor(newCursorStyle) {
+        networkCanvas.style.cursor = newCursorStyle;
+    }
+
+
+    function changeEventCursor(eventName, cursorType) {
+        network.on(eventName, function () {
+            changeCursor(cursorType);
+        });
+    }
+    network.on("hoverNode", function () {
+        changeCursor("pointer");
+    });
+    network.on("hoverEdge", function () {
+        changeCursor("pointer");
+    });
+    network.on("dragStart", function () {
+        changeCursor("grabbing");
+    });
+    network.on("dragging", function () {
+        changeCursor("grabbing");
+    });
+    network.on("dragEnd", function () {
+        changeCursor("grab");
+    });
+    network.on("click", function (params) {
+        $("#Nodetabs").hide()
+        networkDetailsElement.innerHTML = '';
+        const nodeId = params.nodes[0];
+
+
+        const edgeId = params.edges[0];
+        const edge = edges.get(edgeId)
+        if (nodeId) {
+            $("#Nodetabs").show()
+            displayNodeDetails();
+        }
+        if (edgeId) {
+            $("#Nodetabs").hide()
+            displayEdgeDetails(edge);
+        }
+
+
+
+
+    });
+    //node double click
+    network.on("doubleClick", function (params) {
+        $(".dwh-portal-spinner").show();
+        const node = nodes.get(params.nodes[0]);
+        var connectedNodeIds = network.getConnectedNodes(node.id);
+
+
+        connectedNodeIds.filter(nodeId => !lineage.includes(nodeId)).forEach(nodeId => {
+            nodes.remove(nodeId);
+        });
+        $(".dwh-portal-spinner").hide();
+    });
+
+    function expandFront() {
+        $(".dwh-portal-spinner").show();
+        const node_Id = network.getSelection().nodes[0];
+        var connectedNodes = []
+        var connectedNodeIds = network.getConnectedNodes(node_Id, 'to');
+        connectedNodeIds.forEach(nodeId => {
+            connectedNodes.push(nodes.get(nodeId).table_name)
+        });
+        lineage.push(node_Id)
+
+
+        const node = nodes.get(node_Id);
+        if (!node) {
+            alert("please select a node!")
+        }
+        if (node) {
+            $.ajax({
+                type: 'POST',
+                url: 'expand-lineage/',
+                data: { 'csrfmiddlewaretoken': "{{csrf_token}}", "table_name": node.table_name, "node_id": node_Id, "node_level": node.level, "connected_nodes": connectedNodes.join(",") },
+                success: function (data) {
+                    nodes.add(data.nodes);
+                    edges.add(data.edges);
+                    network.setOptions(options)
+                    nodeids = data.nodes.map(item => item.id)
+                    highlightColumnEdge(nodeids, 1)
+                    //color_level(vis_data)
+                    updateIcon(vis_data)
+                    $(".dwh-portal-spinner").hide();
+                }
+            });
+        }
+
+
+    };
+
+    function expandBack() {
+        $(".dwh-portal-spinner").show();
+        const node_Id = network.getSelection().nodes[0];
+        var connectedNodes = []
+        var connectedNodeIds = network.getConnectedNodes(node_Id, 'from');
+        connectedNodeIds.forEach(nodeId => {
+            connectedNodes.push(nodes.get(nodeId).table_name)
+        });
+        lineage.push(node_Id)
+
+
+        const node = nodes.get(node_Id);
+        if (!node) {
+            alert("please select a node!")
+        }
+        if (node) {
+            $.ajax({
+                type: 'POST',
+                url: 'expandback-lineage/',
+                data: { 'csrfmiddlewaretoken': "{{csrf_token}}", "table_name": node.table_name, "node_id": node_Id, "node_level": node.level, "connected_nodes": connectedNodes.join(",") },
+                success: function (data) {
+                    nodes.add(data.nodes);
+                    edges.add(data.edges);
+                    nodeids = data.nodes.map(item => item.id)
+                    highlightColumnEdge(nodeids, 0)
+                    network.setOptions(options)
+                    //color_level(vis_data)
+                    updateIcon(vis_data)
+                    $(".dwh-portal-spinner").hide();
+                }
+            });
+        }
+
+
+    };
+    function displayNodeDetails() {
+        //$("#columnMapping").hide()
+        const node_Id = network.getSelection().nodes[0];
+        const node = nodes.get(node_Id);
+
+
+        if (networkDetailsElement) {
+
+
+            let html = '';
+
+
+            if (node.db !== '-' && node.db !== '') {
+                html += `<b>Database:</b><br>${node.db}<br>`;
+            }
+
+
+            if (node.schema !== '-' && node.schema !== '') {
+                html += `<b>Schema:</b><br>${node.schema}<br>`;
+            }
+
+
+            if (node.USER !== '-' && node.user !== '') {
+                html += `<b>User:</b><br>${node.USER}<br>`;
+            }
+
+
+            if (node.TABLE_OWNER !== '-' && node.TABLE_OWNER !== '') {
+                html += `<b>Owner:</b><br>${node.TABLE_OWNER}<br>`;
+            }
+
+
+            if (node.TABLE_TYPE !== '-') {
+                html += `<b>Type:</b><br>${node.TABLE_TYPE}<br>`;
+            }
+
+
+            if (node.ROW_COUNT !== '-') {
+                html += `<b>Row Count:</b><br>${node.ROW_COUNT}<br>`;
+            }
+
+
+            if (node.CREATED !== '-') {
+                html += `<b>Table Created:</b><br>${node.CREATED}<br>`;
+            }
+
+
+            if (node.LAST_ALTERED !== '-') {
+                html += `<b>Last Sync Date:</b><br>${node.LAST_ALTERED}<br>`;
+            }
+
+
+            if (node.LAST_DDL !== '-') {
+                html += `<b>Last DDL at:</b><br>${node.LAST_DDL}<br>`;
+            }
+
+
+            if (node.LAST_DDL_BY !== '-') {
+                html += `<b>Last DDL by:</b><br>${node.LAST_DDL_BY}<br>`;
+            }
+
+
+            if (node.IS_ICEBERG !== '-') {
+                html += `<b>Iceberg:</b><br>${node.IS_ICEBERG}<br>`;
+            }
+
+
+            if (node.DELETE_DATE !== '-') {
+                html += `<b>Delete Date:</b><br>${node.DELETE_DATE}<br>`;
+            }
+
+
+            if (node.DELETED_BY !== '-') {
+                html += `<b>Deleted By:</b><br>${node.DELETED_BY}<br>`;
+            }
+
+
+            if (node.recon_score !== '-') {
+                html += `<b>Reconcile Score:</b><br>${node.recon_score}<br>`;
+            }
+
+
+            if (node.LOAD_TYPE !== '-' && node.LOAD_TYPE !== '') {
+                html += `<b>Load type:</b><br>${node.LOAD_TYPE}<br>`;
+            }
+
+
+            if (node.PIPELINE_TYPE !== '-') {
+                html += `<b>Pipeline type:</b><br>${node.PIPELINE_TYPE}<br>`;
+            }
+
+
+            if (node.SCHD_FREQUENCY !== '-') {
+                html += `<b>Schedule frequency:</b><br>${node.SCHD_FREQUENCY}<br>`;
+            }
+
+
+            if (node.SCHD_PLAN !== '-') {
+                html += `<b>Schedule plan:</b><br>${node.SCHD_PLAN}<br>`;
+            }
+
+
+            if (node.API_URL !== '-') {
+                html += `<b>API URL:</b><br>${node.API_URL}<br>`;
+            }
+
+
+            if (node.REQ_METHOD !== '-') {
+                html += `<b>Request method:</b><br>${node.REQ_METHOD}<br>`;
+            }
+
+
+            if (node.STATUS !== '-') {
+                html += `<b>Status:</b><br>${node.STATUS}<br>`;
+            }
+
+
+            if (node.S3_PATH !== '-') {
+                html += `<b>S3 Path:</b><br>${node.S3_PATH}<br>`;
+            }
+
+
+            if (node.FILE_NAME !== '-') {
+                html += `<b>File name:</b><br>${node.FILE_NAME}<br>`;
+            }
+
+
+            if (node.FILE_PATH !== '-') {
+                html += `<b>File path:</b><br>${node.FILE_PATH}<br>`;
+            }
+
+
+            if (node.LOAD_FREQUENCY !== '-') {
+                html += `<b>Load frequency:</b><br>${node.LOAD_FREQUENCY}<br>`;
+            }
+
+
+            networkDetailsElement.innerHTML = html;
+        }
+    };
+    function displayNodePrivs() {
+        const node_Id = network.getSelection().nodes[0];
+        const node = nodes.get(node_Id);
+        var data = convertStringToArrayPriv(node.priv)
+        networkDetailsElement.innerHTML = `<table style="table-layout: fixed; height: 90%" class="row-border"
+                                                    id="nodePrivs">
+                                                   
+                                                </table>`;
+        var dtable = $('#nodePrivs').DataTable({
+            ordering: false,
+            scrollY: '60vh',
+            data: data,
+            destroy: false,
+            info: false,
+            paging: false,
+            searching: true,
+            columns: columnDefs2,
+            responsive: true,
+            "language": {
+                "emptyTable": "Role does not have access to any tags"
+            }
+        });
+
+
+    }
+    function displayEdgeDetails(edge) {
+        $(".dwh-portal-spinner").show();
+        networkDetailsElement.innerHTML = `<table style="table-layout: fixed; height: 90%; font-size: 1em;" class="row-border"
+                                                    id="columnMapping">
+                                                   
+                                                </table>`;
+
+
+        $.ajax({
+            type: 'POST',
+            url: 'display-edge/',
+            data: { 'csrfmiddlewaretoken': "{{csrf_token}}", "source": edge.source_obj, "target": edge.target_obj, "mapping": edge.mapping },
+            success: function (loda) {
+
+
+
+
+                var dtable = $('#columnMapping').DataTable({
+                    ordering: false,
+                    scrollY: '60vh',
+                    data: loda.tableData,
+                    destroy: true,
+                    info: false,
+                    paging: false,
+                    searching: true,
+                    columns: columnDefs,
+                    responsive: true,
+                    "language": {
+                        "emptyTable": "No Details available"
+                    }
+                });
+                $(".dwh-portal-spinner").hide();
+            }
+        });
+    }
+    function convertStringToArray(inputString) {
+        // Split the input string by comma to get individual pairs
+        var pairs = inputString.split(',');
+
+
+        // Initialize an empty array to store the result
+        var result = [];
+
+
+        // Iterate through each pair
+        for (var i = 0; i < pairs.length; i++) {
+            // Split each pair by '->' to get the elements
+            var elements = pairs[i].split('->');
+
+
+            // Add the elements as an array to the result
+            result.push(elements);
+        }
+
+
+        return result;
+    }
+    function convertStringToArrayPriv(inputString) {
+        // Split the input string by comma to get individual pairs
+        var pairs = inputString.split('|');
+
+
+        // Initialize an empty array to store the result
+        var result = [];
+
+
+        // Iterate through each pair
+        for (var i = 0; i < pairs.length; i++) {
+            // Split each pair by '->' to get the elements
+            var elements = pairs[i].split('->');
+
+
+            // Add the elements as an array to the result
+            result.push(elements);
+        }
+        return result;
+    }
+    $("#table-search").on("keyup", function () {
+
+
+        let filter = searchBox.value.toUpperCase();
+        var permtree = document.getElementById('permission-tree')
+        var dbul = permtree.childNodes[0].childNodes;
+
+
+        for (let index = 0; index < dbul.length; index++) {
+            var schemlis = dbul[index].childNodes[1].childNodes;
+            let flag = false
+            for (let k = 0; k < schemlis.length; k++) {
+                var schemname = schemlis[k].childNodes[0].innerText.trim()
+                var tablelis = schemlis[k].childNodes[1].childNodes;
+                let flag2 = false;
+                for (let i = 0; i < tablelis.length; i++) {
+                    var tabname = tablelis[i].childNodes[0].innerText.trim()
+                    if (tabname.toUpperCase().indexOf(filter) > -1) {
+
+
+                        tablelis[i].style.display = 'block';
+                        flag2 = true
+                    }
+                    else {
+                        tablelis[i].style.display = 'none';
+                    }
+
+
+                    if (flag2) {
+                        schemlis[k].childNodes[1].style.display = 'block'
+                        schemlis[k].style.display = 'block'
+                        schemlis[k].childNodes[0].childNodes[1].setAttribute('data-mode', 'open')
+                        schemlis[k].childNodes[0].childNodes[1].childNodes[0].setAttribute('class', 'gj-icon chevron-down')
+                        flag = true;
+                    }
+                    else {
+                        schemlis[k].childNodes[1].style.display = 'none'
+                        schemlis[k].style.display = 'none'
+                        schemlis[k].childNodes[0].childNodes[1].setAttribute('data-mode', 'close')
+                        schemlis[k].childNodes[0].childNodes[1].childNodes[0].setAttribute('class', 'gj-icon chevron-right')
+
+
+                    }
+                }
+                if (filter == '') {
+                    dbul[index].childNodes[1].style.display = 'none'
+                    schemlis[k].childNodes[1].style.display = 'none'
+                    dbul[index].childNodes[0].childNodes[1].setAttribute('data-mode', 'close')
+                    schemlis[k].childNodes[0].childNodes[1].setAttribute('data-mode', 'close')
+                    dbul[index].childNodes[0].childNodes[1].childNodes[0].setAttribute('class', 'gj-icon chevron-right')
+                    schemlis[k].childNodes[0].childNodes[1].childNodes[0].setAttribute('class', 'gj-icon chevron-right')
+                }
+            }
+            if (flag) {
+                dbul[index].childNodes[1].style.display = 'block'
+                dbul[index].childNodes[0].childNodes[1].setAttribute('data-mode', 'open')
+                dbul[index].childNodes[0].childNodes[1].childNodes[0].setAttribute('class', 'gj-icon chevron-down')
+            }
+            else {
+                dbul[index].childNodes[1].style.display = 'none'
+                dbul[index].childNodes[0].childNodes[1].setAttribute('data-mode', 'close')
+                dbul[index].childNodes[0].childNodes[1].childNodes[0].setAttribute('class', 'gj-icon chevron-right')
+            }
+
+
+
+
+
+
+        }
+
+
+
+
+    });
+    $('#columnSearch').click(handleSearch);
+    $('#column-search').keyup(function (event) {
+        if (event.keyCode === 13) { // Check if Enter key is pressed
+            event.preventDefault();
+            handleSearch();
+        }
+    });
+
+
+    function handleSearch() {
+        var input = document.getElementById("column-search").value.toUpperCase();
+
+
+        id_lst = edges.getIds();
+        for (let j = 0; j < id_lst.length; j++) {
+            edges.update({ id: id_lst[j], dashes: false });
+        }
+        for (let i = 0; i < id_lst.length; i++) {
+            if (edges.get(id_lst[i]).mapping.indexOf(input) > -1) {
+                edges.update({ id: id_lst[i], dashes: true, title: filterElements(edges.get(id_lst[i]).mapping, input) });
+
+
+                nodes_lst = network.getConnectedNodes(id_lst[i]);
+                //nodes.update({id:nodes_lst[0],color:{color:'#FFFF00'}});
+                //nodes.update({id:nodes_lst[1],color:{color:'#FFFF00'}});
+            }
+        }
+        if (input.length === 0) {
+            for (let j = 0; j < id_lst.length; j++) {
+                edges.update({ id: id_lst[j], dashes: false });
+
+            }
+        }
+    }
+
+
+    function highlightColumnEdge(conNodes, ind) {
+
+
+        var input = document.getElementById("column-search").value.toUpperCase()
+        id_lst = edges.getIds()
+
+        for (let j = 0; j < id_lst.length; j++) {
+            edges.update({ id: id_lst[j], dashes: false });
+        }
+        for (let i = 0; i < id_lst.length; i++) {
+            if (edges.get(id_lst[i]).mapping.indexOf(input) > -1 && input.length != 0) {
+
+
+                edges.update({ id: id_lst[i], dashes: true, title: filterElements(edges.get(id_lst[i]).mapping, input) });
+
+
+                nodes_lst = network.getConnectedNodes(id_lst[i])
+
+
+            }
+            if (edges.get(id_lst[i]).mapping.indexOf(input) <= -1) {
+                nodes_lst = network.getConnectedNodes(id_lst[i])
+
+
+
+
+
+                if (conNodes.includes(nodes_lst[ind])) {
+
+
+                    nodes.remove(nodes_lst[ind])
+                }
+            }
+        }
+
+
+        if (input.length === 0) {
+            for (let j = 0; j < id_lst.length; j++) {
+                edges.update({ id: id_lst[j], dashes: false });
+            }
+        }
+    }
+
+
+    function filterElements(input1, input2) {
+        // Split the first input into individual elements
+        const elements = input1.split(/\s*,\s*/);
+
+
+        // Initialize an empty array to store the filtered elements
+        const filteredElements = [];
+
+
+        // Iterate through each element
+        elements.forEach(element => {
+            // Extract the key and value parts of the element
+            const [key, value] = element.split(/\s*->\s*/).map(part => part.trim());
+
+
+            // Check if the key or the value matches the second input
+            if (key.indexOf(input2) > -1 || value.indexOf(input2) > -1) {
+                filteredElements.push(element);
+            }
+        });
+
+
+
+        // Return the filtered elements as a string
+        return filteredElements.join('\n');
+    }
+
+
+    function updateIcon(data) {
+        data.nodes.forEach(node => {
+            if (node.db === 'POSTGRESQL') {
+                nodes.update({ id: node.id, shape: 'icon', icon: { face: "'FontAwesome'", code: "\uf1c0", color: "" } })
+            }
+            if (node.DELETE_DATE !== '-' || node.DELETED_BY !== '-') {
+                nodes.update({ id: node.id, shape: 'icon', icon: { face: "'FontAwesome'", code: "\uf2dc", color: "#808080" } })
+            }
+            else if (node.db === 'PROD' && node.TYPE === "PERMANENT") {
+                nodes.update({ id: node.id, shape: 'icon', icon: { face: "'FontAwesome'", code: "\uf2dc", color: "#0000e6" } })
+            }
+            else if (node.db === 'PROD' && node.TYPE === "TRANSIENT") {
+                nodes.update({ id: node.id, shape: 'icon', icon: { face: "'FontAwesome'", code: "\uf2dc", color: "#6666ff" } })
+            }
+            else if (node.db === 'PROD' && node.TYPE === "TEMPORARY") {
+                nodes.update({ id: node.id, shape: 'icon', icon: { face: "'FontAwesome'", code: "\uf2dc", color: "#b3b3ff" } })
+            }
+
+            if (node.db === 'MONGODB') {
+                nodes.update({ id: node.id, shape: 'icon', icon: { face: "'FontAwesome'", code: "\uf1c0", color: "#90EE90" } })
+            }
+            if (node.db === 'MICROSOFT SQL SERVER') {
+                nodes.update({ id: node.id, shape: 'icon', icon: { face: "'FontAwesome'", code: "\uf1c0", color: "#FF0000" } })
+            }
+            if (node.db === 'SALESFORCE') {
+                nodes.update({ id: node.id, shape: 'icon', icon: { face: "'FontAwesome'", code: "\uf83b", color: "#68BBE3" } })
+            }
+            if (node.S3_PATH !== '-') {
+                nodes.update({ id: node.id, shape: 'icon', icon: { face: "'FontAwesome'", code: "\uf375" } })
+            }
+            if (node.FILE_PATH !== '-') {
+                nodes.update({ id: node.id, shape: 'icon', icon: { face: "'FontAwesome'", code: "\ue4f0" } })
+            }
+            if (node.API_URL !== '-') {
+                nodes.update({ id: node.id, shape: 'icon', icon: { face: "'FontAwesome'", code: "\uf085" } })
+            }
+        })
+
+
+    }
+</script>
+{% endblock javascripts %}
