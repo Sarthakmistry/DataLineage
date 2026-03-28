@@ -3,3 +3,8 @@ __pycache__/
 *.sqlite3
 .env
 *.log
+download.py
+lineage_master_data.csv
+manage.py
+upload.py
+.venv/

@@ -1,0 +1,1002 @@
+{% extends "layouts/base-all-module.html" %}
+
+{% block title %}Data Lineage{% endblock %}
+
+{% block stylesheets %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; }
+
+  /* ── CSS variables ─────────────────────────────────── */
+  :root {
+    --bg:           #0f1117;
+    --bg-panel:     #1a1d27;
+    --bg-panel-alt: #1e2130;
+    --bg-hover:     #252840;
+    --border:       rgba(255,255,255,0.07);
+    --accent:       #6c63ff;
+    --accent-soft:  rgba(108,99,255,0.15);
+    --accent-hover: #8a84ff;
+    --text-primary: #e8eaf0;
+    --text-secondary: #8b8fa8;
+    --text-muted:   #4f5368;
+    --success:      #22c55e;
+    --warning:      #f59e0b;
+    --danger:       #ef4444;
+    --node-perm:    #4f8ef7;
+    --node-trans:   #a78bfa;
+    --node-temp:    #c4b5fd;
+    --node-del:     #6b7280;
+    --radius:       10px;
+    --radius-sm:    6px;
+    --shadow:       0 4px 24px rgba(0,0,0,0.4);
+    --shadow-sm:    0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  #react-root {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 44px);
+    background: var(--bg);
+  }
+
+  /* ── Page header ───────────────────────────────────── */
+  .dl-header {
+    padding: 10px 20px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .dl-header-icon {
+    width: 28px; height: 28px;
+    background: var(--accent-soft);
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent); font-size: 0.85rem;
+  }
+  .dl-header h5 {
+    margin: 0; font-size: 0.95rem; font-weight: 600;
+    color: var(--text-primary); letter-spacing: 0.01em;
+  }
+  .dl-header-sub {
+    margin-left: auto; font-size: 0.75rem;
+    color: var(--text-muted); letter-spacing: 0.03em;
+  }
+
+  /* ── Main body ─────────────────────────────────────── */
+  .dl-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    padding: 12px;
+    gap: 10px;
+    min-height: 0;
+  }
+
+  /* ── Shared panel shell ────────────────────────────── */
+  .panel-shell {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .panel-title {
+    padding: 9px 12px 8px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  /* ── Tree panel ────────────────────────────────────── */
+  .tree-panel {
+    width: 265px;
+    min-width: 180px;
+  }
+  .tree-search-wrap {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .tree-search {
+    width: 100%;
+    padding: 6px 10px 6px 30px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.82rem;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .tree-search::placeholder { color: var(--text-muted); }
+  .tree-search:focus { border-color: var(--accent); }
+  .tree-search-icon {
+    position: absolute; left: 20px;
+    top: 50%; transform: translateY(-50%);
+    color: var(--text-muted); font-size: 0.75rem; pointer-events: none;
+  }
+  .tree-search-wrap { position: relative; }
+  .tree-scroll { flex: 1; overflow-y: auto; padding: 6px 8px 10px; }
+  .tree-scroll::-webkit-scrollbar { width: 4px; }
+  .tree-scroll::-webkit-scrollbar-track { background: transparent; }
+  .tree-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .tree-db { margin-bottom: 2px; }
+  .tree-toggle {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 8px; cursor: pointer; border-radius: var(--radius-sm);
+    font-size: 0.8rem; user-select: none; color: var(--text-primary);
+    transition: background 0.12s;
+  }
+  .tree-toggle:hover { background: var(--bg-hover); }
+  .tree-toggle .arrow { font-size: 0.6rem; color: var(--text-muted); width: 10px; transition: transform 0.15s; }
+  .tree-toggle .db-icon { color: var(--accent); font-size: 0.75rem; }
+  .tree-schema { margin-left: 16px; }
+  .tree-schema .tree-toggle { color: var(--text-secondary); font-size: 0.78rem; }
+  .tree-schema .db-icon { color: var(--warning); }
+  .tree-table-item {
+    margin-left: 28px; padding: 3px 10px;
+    cursor: pointer; font-size: 0.77rem;
+    color: var(--text-secondary); border-radius: var(--radius-sm);
+    transition: all 0.12s; border-left: 2px solid transparent;
+  }
+  .tree-table-item:hover {
+    background: var(--accent-soft); color: var(--accent-hover);
+    border-left-color: var(--accent);
+  }
+  .tree-table-item.active {
+    background: var(--accent-soft); color: var(--accent);
+    border-left-color: var(--accent); font-weight: 500;
+  }
+
+  /* ── Graph panel ───────────────────────────────────── */
+  .graph-panel { flex: 1; min-width: 0; }
+  .graph-toolbar {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 14px;
+    flex-wrap: wrap; flex-shrink: 0; font-size: 0.78rem;
+    background: var(--bg-panel-alt);
+  }
+  .graph-toolbar.hidden { display: none; }
+  .legend-item { display: inline-flex; align-items: center; gap: 5px; color: var(--text-secondary); }
+  .legend-dot  { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 6px currentColor; }
+  .legend-sep  { width: 1px; height: 14px; background: var(--border); }
+  .col-search-wrap { display: flex; margin-left: auto; }
+  .col-search-wrap input {
+    padding: 5px 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-right: none;
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+    font-size: 0.8rem; color: var(--text-primary); outline: none; width: 180px;
+    transition: border-color 0.15s;
+  }
+  .col-search-wrap input::placeholder { color: var(--text-muted); }
+  .col-search-wrap input:focus { border-color: var(--accent); }
+  .col-search-wrap button {
+    padding: 5px 12px;
+    background: var(--accent); border: 1px solid var(--accent); color: #fff;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0; cursor: pointer;
+    font-size: 0.8rem; transition: background 0.15s;
+  }
+  .col-search-wrap button:hover { background: var(--accent-hover); }
+
+  .graph-placeholder {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 12px;
+    background: radial-gradient(ellipse at center, rgba(108,99,255,0.04) 0%, transparent 70%);
+  }
+  .graph-placeholder-icon {
+    width: 64px; height: 64px;
+    background: var(--accent-soft); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent); font-size: 1.6rem;
+  }
+  .graph-placeholder p { margin: 0; color: var(--text-muted); font-size: 0.85rem; }
+  .graph-placeholder small { color: var(--text-muted); font-size: 0.75rem; opacity: 0.7; }
+
+  #vis-container {
+    flex: 1; min-height: 0;
+    background: radial-gradient(ellipse at 50% 40%, rgba(108,99,255,0.06) 0%, transparent 65%),
+                repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.02) 39px, rgba(255,255,255,0.02) 40px),
+                repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.02) 39px, rgba(255,255,255,0.02) 40px);
+  }
+
+  /* ── Details panel ─────────────────────────────────── */
+  .details-panel { width: 245px; min-width: 175px; padding: 10px; gap: 8px; }
+  .expand-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; flex-shrink: 0; }
+  .exp-btn {
+    padding: 7px 4px;
+    background: var(--bg);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer; font-size: 0.75rem;
+    transition: all 0.15s;
+  }
+  .exp-btn:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .node-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; flex-shrink: 0; }
+  .ntab-btn {
+    padding: 5px; font-size: 0.78rem;
+    background: var(--bg); color: var(--text-secondary);
+    border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer;
+    transition: all 0.15s;
+  }
+  .ntab-btn:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.15); }
+  .ntab-btn.active {
+    background: var(--accent-soft); color: var(--accent);
+    border-color: var(--accent);
+  }
+  .panel-scroll { flex: 1; overflow-y: auto; min-height: 0; }
+  .panel-scroll::-webkit-scrollbar { width: 4px; }
+  .panel-scroll::-webkit-scrollbar-track { background: transparent; }
+  .panel-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .node-details { font-size: 0.78rem; }
+  .node-detail-row {
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 1px;
+  }
+  .node-detail-row:last-child { border-bottom: none; }
+  .node-detail-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--accent); }
+  .node-detail-value { color: var(--text-primary); font-size: 0.78rem; word-break: break-all; }
+
+  .placeholder-msg {
+    color: var(--text-muted); font-size: 0.8rem;
+    text-align: center; margin-top: 30px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+  }
+  .placeholder-msg i { font-size: 1.4rem; opacity: 0.4; }
+  .panel-section-title {
+    font-size: 0.68rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-muted); flex-shrink: 0;
+    padding-bottom: 6px; border-bottom: 1px solid var(--border);
+  }
+
+  /* ── Shared table ──────────────────────────────────── */
+  .mini-table { width: 100%; border-collapse: collapse; font-size: 0.73rem; }
+  .mini-table th {
+    background: var(--bg); color: var(--text-muted);
+    padding: 5px 7px; text-align: left;
+    font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.06em;
+    position: sticky; top: 0; z-index: 1;
+    border-bottom: 1px solid var(--border);
+  }
+  .mini-table td { padding: 4px 7px; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+  .mini-table tr:hover td { background: var(--bg-hover); color: var(--text-primary); }
+
+  /* ── Spinner overlay ───────────────────────────────── */
+  .spinner-overlay {
+    position: fixed; inset: 0;
+    background: rgba(15,17,23,0.7);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+  }
+  .spinner-inner {
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+    color: var(--accent); font-size: 2rem;
+  }
+  .spinner-inner span {
+    font-size: 0.82rem; color: var(--text-secondary); letter-spacing: 0.05em;
+  }
+
+  /* ── Modal ─────────────────────────────────────────── */
+  .modal-bg {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center; z-index: 1050;
+  }
+  .modal-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    max-width: 440px; width: 92%;
+    box-shadow: var(--shadow);
+  }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .modal-header h5 { margin: 0; color: var(--text-primary); font-size: 1rem; }
+  .modal-close-btn {
+    background: none; border: none; font-size: 1.2rem;
+    cursor: pointer; color: var(--text-muted); transition: color 0.15s;
+  }
+  .modal-close-btn:hover { color: var(--text-primary); }
+  .modal-card p { margin: 0 0 20px; font-size: 0.87rem; color: var(--text-secondary); line-height: 1.5; }
+  .btn-primary {
+    padding: 7px 20px; background: var(--accent); color: #fff;
+    border: none; border-radius: var(--radius-sm);
+    cursor: pointer; font-size: 0.85rem; font-weight: 500;
+    transition: background 0.15s; letter-spacing: 0.02em;
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+
+  /* ── Tag badge ─────────────────────────────────────── */
+  .type-badge {
+    display: inline-block; padding: 1px 6px;
+    border-radius: 3px; font-size: 0.68rem; font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  .type-badge.perm  { background: rgba(79,142,247,0.15); color: var(--node-perm); }
+  .type-badge.trans { background: rgba(167,139,250,0.15); color: var(--node-trans); }
+  .type-badge.temp  { background: rgba(196,181,253,0.15); color: var(--node-temp); }
+  .type-badge.del   { background: rgba(107,114,128,0.15); color: var(--node-del); }
+</style>
+{% endblock %}
+
+
+{% block content %}
+{{json_data|json_script:"pipe_metadata"}}
+<div id="react-root"></div>
+{% endblock %}
+
+
+{% block javascripts %}
+<!-- React 18 + Babel standalone (JSX in browser, no build step) -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<!-- Django renders the CSRF token here; everything below is {% verbatim %} -->
+<script>
+  window.__CSRF_TOKEN__ = "{{ csrf_token }}";
+</script>
+
+{% verbatim %}
+<script type="text/babel">
+/* ============================================================
+   DATA LINEAGE — React App
+   Communicates with Django views:
+     POST create-lineage/       → generate_visjs_data
+     POST expand-lineage/       → expand_visjs_data
+     POST expandback-lineage/   → expand_visjs_data_back
+     POST display-edge/         → get_data_definition
+   ============================================================ */
+
+const { useState, useEffect, useRef, useCallback } = React;
+
+const CSRF_TOKEN  = window.__CSRF_TOKEN__;
+const TREE_DATA   = JSON.parse(document.getElementById('pipe_metadata').textContent);
+
+// ── HTTP helper ────────────────────────────────────────────────────────────
+async function postData(url, body) {
+  const res = await fetch(url, {
+    method : 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body   : new URLSearchParams({ csrfmiddlewaretoken: CSRF_TOKEN, ...body }).toString(),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+// ── Node icon / color helpers ──────────────────────────────────────────────
+function resolveNodeStyle(node) {
+  let color = '#4f8ef7';   // PERMANENT default (matches --node-perm)
+  let code  = '\uf1c0';   // fa-database
+
+  if (node.DELETE_DATE !== '-' || node.DELETED_BY !== '-') { color = '#6b7280'; }
+  else if (node.TYPE === 'TRANSIENT') color = '#a78bfa';
+  else if (node.TYPE === 'TEMPORARY') color = '#c4b5fd';
+
+  if (node.db === 'POSTGRESQL')           { color = '#336791'; code = '\uf1c0'; }
+  if (node.db === 'MONGODB')              { color = '#4DB33D'; code = '\uf1c0'; }
+  if (node.db === 'MICROSOFT SQL SERVER') { color = '#CC2927'; code = '\uf1c0'; }
+  if (node.db === 'SALESFORCE')           { code = '\uf83b'; color = '#68BBE3'; }
+  if (node.S3_PATH   !== '-')             { code = '\uf375'; color = '#FF9900'; }
+  if (node.FILE_PATH !== '-')               code = '\ue4f0';
+  if (node.API_URL   !== '-')             { code = '\uf085'; color = '#a78bfa'; }
+
+  return { shape: 'icon', icon: { face: "'FontAwesome'", code, color, size: 32 } };
+}
+
+// ── Tree components ────────────────────────────────────────────────────────
+function TableItem({ db, schema, table, active, onSelect }) {
+  return (
+    <div
+      className={`tree-table-item${active ? ' active' : ''}`}
+      onClick={() => onSelect(db, schema, table)}
+    >
+      <i className="fas fa-table" style={{fontSize:'0.65rem', marginRight: 5, opacity: 0.6}} />
+      {table}
+    </div>
+  );
+}
+
+function SchemaNode({ dbName, schema, activeKey, onSelect, filter }) {
+  const [open, setOpen] = useState(false);
+  const tables = filter
+    ? schema.children.filter(t => t.text.toUpperCase().includes(filter))
+    : schema.children;
+  if (filter && tables.length === 0) return null;
+  const expanded = open || (filter && tables.length > 0);
+
+  return (
+    <div className="tree-schema">
+      <div className="tree-toggle" onClick={() => setOpen(o => !o)}>
+        <span className="arrow">{expanded ? '▼' : '▶'}</span>
+        <i className="fas fa-layer-group db-icon" />
+        {schema.text}
+        <span style={{marginLeft:'auto', fontSize:'0.65rem', opacity:0.4}}>{schema.children.length}</span>
+      </div>
+      {expanded && tables.map((t, i) => (
+        <TableItem
+          key={i}
+          db={dbName} schema={schema.text} table={t.text}
+          active={activeKey === `${dbName}.${schema.text}.${t.text}`}
+          onSelect={onSelect}
+        />
+      ))}
+    </div>
+  );
+}
+
+function DbNode({ dbNode, activeKey, onSelect, filter }) {
+  const [open, setOpen] = useState(false);
+  const hasMatch = filter
+    ? dbNode.children.some(s => s.children.some(t => t.text.toUpperCase().includes(filter)))
+    : true;
+  if (!hasMatch) return null;
+  const expanded = open || (filter && hasMatch);
+
+  return (
+    <div className="tree-db">
+      <div className="tree-toggle" onClick={() => setOpen(o => !o)}>
+        <span className="arrow">{expanded ? '▼' : '▶'}</span>
+        <i className="fas fa-database db-icon" />
+        <strong>{dbNode.text}</strong>
+      </div>
+      {expanded && dbNode.children.map((s, i) => (
+        <SchemaNode
+          key={i}
+          dbName={dbNode.text} schema={s}
+          activeKey={activeKey} onSelect={onSelect} filter={filter}
+        />
+      ))}
+    </div>
+  );
+}
+
+function TreePanel({ activeKey, onSelect }) {
+  const [filter, setFilter] = useState('');
+  const upper = filter.trim().toUpperCase();
+  return (
+    <div className="tree-panel panel-shell">
+      <div className="panel-title">
+        <i className="fas fa-sitemap" style={{marginRight: 6}} />
+        Objects
+      </div>
+      <div className="tree-search-wrap">
+        <i className="fas fa-search tree-search-icon" />
+        <input
+          className="tree-search"
+          type="text"
+          placeholder="Search tables…"
+          value={filter}
+          onChange={e => setFilter(e.target.value)}
+        />
+      </div>
+      <div className="tree-scroll">
+        {TREE_DATA.map((db, i) => (
+          <DbNode key={i} dbNode={db} activeKey={activeKey} onSelect={onSelect} filter={upper} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Details panel sub-views ────────────────────────────────────────────────
+function typeBadge(type) {
+  if (!type || type === '-') return null;
+  const cls = type === 'PERMANENT' ? 'perm' : type === 'TRANSIENT' ? 'trans' : type === 'TEMPORARY' ? 'temp' : 'del';
+  return <span className={`type-badge ${cls}`}>{type}</span>;
+}
+
+function NodeProfile({ node }) {
+  const fields = [
+    ['Database',        node.db],
+    ['Schema',          node.schema],
+    ['User',            node.USER],
+    ['Owner',           node.TABLE_OWNER],
+    ['Table Type',      node.TABLE_TYPE],
+    ['Row Count',       node.ROW_COUNT],
+    ['Bytes',           node.BYTES],
+    ['Created',         node.CREATED],
+    ['Last Sync',       node.LAST_ALTERED],
+    ['Last DDL',        node.LAST_DDL],
+    ['Last DDL By',     node.LAST_DDL_BY],
+    ['Iceberg',         node.IS_ICEBERG],
+    ['Transient',       node.IS_TRANSIENT],
+    ['Dropped',         node.IS_DROPPED],
+    ['Delete Date',     node.DELETE_DATE],
+    ['Deleted By',      node.DELETED_BY],
+    ['Load Type',       node.LOAD_TYPE],
+    ['Pipeline Type',   node.PIPELINE_TYPE],
+    ['Sched Frequency', node.SCHD_FREQUENCY],
+    ['Sched Plan',      node.SCHD_PLAN],
+    ['API URL',         node.API_URL],
+    ['Req Method',      node.REQ_METHOD],
+    ['Status',          node.STATUS],
+    ['S3 Path',         node.S3_PATH],
+    ['File Name',       node.FILE_NAME],
+    ['File Path',       node.FILE_PATH],
+    ['Load Frequency',  node.LOAD_FREQUENCY],
+  ];
+  return (
+    <div className="node-details">
+      {node.TYPE && node.TYPE !== '-' && (
+        <div className="node-detail-row">
+          <span className="node-detail-label">Type</span>
+          {typeBadge(node.TYPE)}
+        </div>
+      )}
+      {fields
+        .filter(([, v]) => v && String(v) !== '-')
+        .map(([label, value]) => (
+          <div className="node-detail-row" key={label}>
+            <span className="node-detail-label">{label}</span>
+            <span className="node-detail-value">{String(value)}</span>
+          </div>
+        ))
+      }
+    </div>
+  );
+}
+
+function NodePrivileges({ priv }) {
+  const rows = (priv || '')
+    .split('|')
+    .map(p => { const [a, b] = p.split('->'); return { priv: (a||'').trim(), users: (b||'').trim() }; })
+    .filter(r => r.priv);
+  return (
+    <table className="mini-table">
+      <thead><tr><th>Privilege</th><th>Users</th></tr></thead>
+      <tbody>
+        {rows.length === 0
+          ? <tr><td colSpan="2" style={{textAlign:'center', opacity:0.4, padding:'10px'}}>No privileges</td></tr>
+          : rows.map((r, i) => <tr key={i}><td>{r.priv}</td><td>{r.users}</td></tr>)
+        }
+      </tbody>
+    </table>
+  );
+}
+
+function EdgeMapping({ rows }) {
+  if (!rows || rows.length === 0)
+    return (
+      <div className="placeholder-msg">
+        <i className="fas fa-unlink" />
+        No mapping data available
+      </div>
+    );
+  return (
+    <table className="mini-table">
+      <thead>
+        <tr>
+          <th>Source</th><th>Target</th>
+          <th>Definition</th><th>Type</th><th>Logic</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r, i) => (
+          <tr key={i}>
+            <td>{r.source_column}</td>
+            <td>{r.target_column}</td>
+            <td>{r.description}</td>
+            <td>{r.column_type}</td>
+            <td>{r.column_logic}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function DetailsPanel({ selectedNode, edgeRows, onExpandFront, onExpandBack }) {
+  const [tab, setTab] = useState('profile');
+  useEffect(() => { setTab(edgeRows !== null ? 'edge' : 'profile'); }, [selectedNode, edgeRows]);
+
+  const showTabs = selectedNode && edgeRows === null;
+  return (
+    <div className="details-panel panel-shell">
+      <div className="panel-title">
+        <i className="fas fa-info-circle" style={{marginRight: 6}} />
+        Details
+      </div>
+
+      <div style={{padding:'8px', display:'flex', flexDirection:'column', gap:'8px', flex:1, overflow:'hidden', minHeight:0}}>
+        {/* Expand buttons */}
+        <div className="expand-btns">
+          <button className="exp-btn" onClick={onExpandBack}>
+            <i className="fas fa-angles-left" style={{marginRight:4}} />Back
+          </button>
+          <button className="exp-btn" onClick={onExpandFront}>
+            Front<i className="fas fa-angles-right" style={{marginLeft:4}} />
+          </button>
+        </div>
+
+        {/* Node profile / privileges tabs */}
+        {showTabs && (
+          <div className="node-tabs">
+            <button className={`ntab-btn${tab==='profile'?' active':''}`} onClick={() => setTab('profile')}>
+              <i className="fas fa-id-card" style={{marginRight:4}} />Profile
+            </button>
+            <button className={`ntab-btn${tab==='privileges'?' active':''}`} onClick={() => setTab('privileges')}>
+              <i className="fas fa-key" style={{marginRight:4}} />Privs
+            </button>
+          </div>
+        )}
+
+        {/* Edge mapping header */}
+        {edgeRows !== null && (
+          <div className="panel-section-title">
+            <i className="fas fa-arrow-right-arrow-left" style={{marginRight:5}} />
+            Column Mapping
+          </div>
+        )}
+
+        {/* Content */}
+        <div className="panel-scroll">
+          {edgeRows !== null && <EdgeMapping rows={edgeRows} />}
+          {showTabs && tab === 'profile'    && <NodeProfile node={selectedNode} />}
+          {showTabs && tab === 'privileges' && <NodePrivileges priv={selectedNode.priv} />}
+          {!selectedNode && edgeRows === null && (
+            <div className="placeholder-msg">
+              <i className="fas fa-hand-pointer" />
+              <span>Select a node or edge<br/>to view details</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main App ───────────────────────────────────────────────────────────────
+function App() {
+  const [loading,      setLoading]      = useState(false);
+  const [activeKey,    setActiveKey]    = useState(null);
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [edgeRows,     setEdgeRows]     = useState(null);
+  const [graphReady,   setGraphReady]   = useState(false);
+  const [modal,        setModal]        = useState(null);
+  const [colSearch,    setColSearch]    = useState('');
+
+  const containerRef = useRef(null);
+  const networkRef   = useRef(null);
+  const nodesDS      = useRef(null);
+  const edgesDS      = useRef(null);
+  const lineage      = useRef([]);   // IDs from the initial load — collapse protection
+
+  // ── Bootstrap vis.js once ──────────────────────────────────────────────
+  useEffect(() => {
+    nodesDS.current = new vis.DataSet([]);
+    edgesDS.current = new vis.DataSet([]);
+
+    const options = {
+      nodes: {
+        shape: 'icon',
+        icon: { face: "'FontAwesome'", code: '\uf1c0', color: '#4f8ef7', size: 32 },
+        font: { color: '#e8eaf0', size: 11, face: 'Inter, Arial' },
+      },
+      edges: {
+        color: { color: 'rgba(108,99,255,0.45)', highlight: '#6c63ff', hover: '#8a84ff' },
+        arrows: { to: { enabled: true, type: 'arrow', scaleFactor: 0.6 } },
+        smooth: { type: 'cubicBezier', roundness: 0.4 },
+        width: 1.5,
+      },
+      layout: {
+        hierarchical: {
+          direction: 'LR',
+          sortMethod: 'directed',
+          levelSeparation: 420,
+          nodeSpacing: 100,
+        },
+      },
+      interaction: { hover: true, selectConnectedEdges: false, multiselect: false },
+      manipulation: { enabled: false },
+    };
+
+    networkRef.current = new vis.Network(
+      containerRef.current,
+      { nodes: nodesDS.current, edges: edgesDS.current },
+      options
+    );
+
+    const canvas = containerRef.current.querySelector('canvas');
+
+    networkRef.current.on('hoverNode', () => { if (canvas) canvas.style.cursor = 'pointer'; });
+    networkRef.current.on('hoverEdge', () => { if (canvas) canvas.style.cursor = 'pointer'; });
+    networkRef.current.on('blurNode',  () => { if (canvas) canvas.style.cursor = 'default'; });
+    networkRef.current.on('blurEdge',  () => { if (canvas) canvas.style.cursor = 'default'; });
+    networkRef.current.on('dragStart', () => { if (canvas) canvas.style.cursor = 'grabbing'; });
+    networkRef.current.on('dragEnd',   () => { if (canvas) canvas.style.cursor = 'grab'; });
+
+    networkRef.current.on('click', params => {
+      const nid = params.nodes[0];
+      const eid = params.edges[0];
+      if (nid) {
+        setSelectedNode(nodesDS.current.get(nid));
+        setEdgeRows(null);
+      } else if (eid) {
+        setSelectedNode(null);
+        fetchEdge(edgesDS.current.get(eid));
+      } else {
+        setSelectedNode(null);
+        setEdgeRows(null);
+      }
+    });
+
+    // Double-click collapses a node (removes non-root downstream)
+    networkRef.current.on('doubleClick', params => {
+      const nid = params.nodes[0];
+      if (!nid) return;
+      networkRef.current.getConnectedNodes(nid)
+        .filter(id => !lineage.current.includes(id))
+        .forEach(id => nodesDS.current.remove(id));
+    });
+
+    return () => networkRef.current?.destroy();
+  }, []);
+
+  // ── Column search ──────────────────────────────────────────────────────
+  const applyColSearch = useCallback((term) => {
+    const q = term.trim().toUpperCase();
+    edgesDS.current?.getIds().forEach(id => {
+      const e = edgesDS.current.get(id);
+      const mapping = e.mapping || '';
+      if (q && mapping.toUpperCase().includes(q)) {
+        const title = mapping.split(',')
+          .map(s => s.trim())
+          .filter(s => s.toUpperCase().includes(q))
+          .join('\n');
+        edgesDS.current.update({ id, dashes: true, title });
+      } else {
+        edgesDS.current.update({ id, dashes: false, title: undefined });
+      }
+    });
+  }, []);
+
+  // ── Stamp icons onto nodes after add ──────────────────────────────────
+  function stampIcons(nodeList) {
+    nodeList.forEach(n => {
+      nodesDS.current.update({ id: n.id, label: n.label, ...resolveNodeStyle(n) });
+    });
+  }
+
+  // ── Fetch edge column mapping ──────────────────────────────────────────
+  async function fetchEdge(edge) {
+    setLoading(true);
+    try {
+      const data = await postData('/display-edge/', {
+        source:  edge.source_obj,
+        target:  edge.target_obj,
+        mapping: edge.mapping,
+      });
+      setEdgeRows(data.tableData || []);
+    } catch {
+      setEdgeRows([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ── Load initial lineage for a selected table ──────────────────────────
+  async function handleSelectTable(db, schema, table) {
+    setLoading(true);
+    setActiveKey(`${db}.${schema}.${table}`);
+    setSelectedNode(null);
+    setEdgeRows(null);
+    lineage.current = [];
+
+    try {
+      const data = await postData('/create-lineage/', {
+        db_name: db, schema_name: schema, table_name: table,
+      });
+
+      nodesDS.current.clear();
+      edgesDS.current.clear();
+
+      if (data.nodes.length === 0) {
+        setGraphReady(false);
+        setModal('No lineage available — no operation has been recorded for this table.');
+        return;
+      }
+
+      nodesDS.current.add(data.nodes);
+      edgesDS.current.add(data.edges);
+      lineage.current = data.nodes.map(n => n.id);
+      setGraphReady(true);
+      stampIcons(data.nodes);
+      applyColSearch(colSearch);
+    } catch (e) {
+      setModal(`Failed to load lineage: ${e.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ── Expand front (downstream) ──────────────────────────────────────────
+  async function handleExpandFront() {
+    const nid = networkRef.current?.getSelection().nodes[0];
+    if (!nid) { alert('Please select a node first.'); return; }
+    const node = nodesDS.current.get(nid);
+    if (!node) return;
+
+    lineage.current.push(nid);
+    const connected = networkRef.current.getConnectedNodes(nid, 'to')
+      .map(id => nodesDS.current.get(id)?.table_name).filter(Boolean);
+
+    setLoading(true);
+    try {
+      const data = await postData('/expand-lineage/', {
+        table_name: node.table_name, node_id: nid,
+        node_level: node.level, connected_nodes: connected.join(','),
+      });
+      nodesDS.current.add(data.nodes);
+      edgesDS.current.add(data.edges);
+      stampIcons(data.nodes);
+      applyColSearch(colSearch);
+    } catch (e) {
+      alert(`Expand failed: ${e.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ── Expand back (upstream) ─────────────────────────────────────────────
+  async function handleExpandBack() {
+    const nid = networkRef.current?.getSelection().nodes[0];
+    if (!nid) { alert('Please select a node first.'); return; }
+    const node = nodesDS.current.get(nid);
+    if (!node) return;
+
+    lineage.current.push(nid);
+    const connected = networkRef.current.getConnectedNodes(nid, 'from')
+      .map(id => nodesDS.current.get(id)?.table_name).filter(Boolean);
+
+    setLoading(true);
+    try {
+      const data = await postData('/expandback-lineage/', {
+        table_name: node.table_name, node_id: nid,
+        node_level: node.level, connected_nodes: connected.join(','),
+      });
+      nodesDS.current.add(data.nodes);
+      edgesDS.current.add(data.edges);
+      stampIcons(data.nodes);
+      applyColSearch(colSearch);
+    } catch (e) {
+      alert(`Expand back failed: ${e.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ── Render ─────────────────────────────────────────────────────────────
+  return (
+    <>
+      {/* Loading spinner */}
+      {loading && (
+        <div className="spinner-overlay">
+          <div className="spinner-inner">
+            <i className="fas fa-spinner fa-spin" />
+            <span>Loading lineage…</span>
+          </div>
+        </div>
+      )}
+
+      {/* Info modal */}
+      {modal && (
+        <div className="modal-bg" onClick={() => setModal(null)}>
+          <div className="modal-card" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h5><i className="fas fa-info-circle" style={{marginRight:8, color:'#6c63ff'}} />Data Lineage</h5>
+              <button className="modal-close-btn" onClick={() => setModal(null)}>×</button>
+            </div>
+            <p>{modal}</p>
+            <button className="btn-primary" onClick={() => setModal(null)}>Got it</button>
+          </div>
+        </div>
+      )}
+
+      {/* Page header */}
+      <div className="dl-header">
+        <div className="dl-header-icon"><i className="fas fa-project-diagram" /></div>
+        <h5>Data Lineage</h5>
+        <span className="dl-header-sub">Powered by vis.js · React</span>
+      </div>
+
+      {/* Three-column body */}
+      <div className="dl-body">
+
+        {/* ─ Left: tree navigation ─ */}
+        <TreePanel activeKey={activeKey} onSelect={handleSelectTable} />
+
+        {/* ─ Centre: vis.js graph ─ */}
+        <div className="graph-panel panel-shell">
+          {/* Legend + column search toolbar */}
+          <div className={`graph-toolbar${graphReady ? '' : ' hidden'}`}>
+            <span className="legend-item">
+              <span className="legend-dot" style={{background:'#4f8ef7', boxShadow:'0 0 6px #4f8ef7'}} /> Permanent
+            </span>
+            <span className="legend-sep" />
+            <span className="legend-item">
+              <span className="legend-dot" style={{background:'#a78bfa', boxShadow:'0 0 6px #a78bfa'}} /> Transient
+            </span>
+            <span className="legend-sep" />
+            <span className="legend-item">
+              <span className="legend-dot" style={{background:'#c4b5fd', boxShadow:'0 0 6px #c4b5fd'}} /> Temporary
+            </span>
+            <span className="legend-sep" />
+            <span className="legend-item">
+              <span className="legend-dot" style={{background:'#6b7280'}} /> Deleted
+            </span>
+            <div className="col-search-wrap">
+              <input
+                type="text"
+                placeholder="Search column…"
+                value={colSearch}
+                onChange={e => setColSearch(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') applyColSearch(colSearch); }}
+              />
+              <button onClick={() => applyColSearch(colSearch)}>
+                <i className="fas fa-search" />
+              </button>
+            </div>
+          </div>
+
+          {/* Placeholder when no table selected */}
+          {!graphReady && (
+            <div className="graph-placeholder">
+              <div className="graph-placeholder-icon">
+                <i className="fas fa-project-diagram" />
+              </div>
+              <p>Select a table to explore its lineage</p>
+              <small>Click any table in the left panel to begin</small>
+            </div>
+          )}
+
+          {/* vis.js mount — always in DOM so the network instance persists */}
+          <div
+            ref={containerRef}
+            id="vis-container"
+            style={{display: graphReady ? 'flex' : 'none'}}
+          />
+        </div>
+
+        {/* ─ Right: details / edge panel ─ */}
+        <DetailsPanel
+          selectedNode={selectedNode}
+          edgeRows={edgeRows}
+          onExpandFront={handleExpandFront}
+          onExpandBack={handleExpandBack}
+        />
+      </div>
+    </>
+  );
+}
+
+// ── Mount ──────────────────────────────────────────────────────────────────
+ReactDOM.createRoot(document.getElementById('react-root')).render(<App />);
+</script>
+{% endverbatim %}
+{% endblock %}

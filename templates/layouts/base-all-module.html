@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Data Lineage{% endblock %}</title>
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <!-- vis.js CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/vis-network/standalone/umd/vis-network.min.css">
+
+    {% block stylesheets %}{% endblock %}
+
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+        .pcoded-main-container { padding: 20px; }
+        .card { border: 1px solid #ddd; border-radius: 4px; margin-bottom: 20px; }
+        .card-header { padding: 15px; background-color: #f8f9fa; border-bottom: 1px solid #ddd; }
+        .card-header h5 { margin: 0; }
+        .card-body { padding: 15px; }
+        .row { display: flex; flex-wrap: wrap; }
+        .col-xl-2 { flex: 0 0 16.666%; max-width: 16.666%; }
+        .col-xl-3 { flex: 0 0 25%; max-width: 25%; }
+        .col-xl-7 { flex: 0 0 58.333%; max-width: 58.333%; }
+        .form-control { width: 100%; padding: 6px 12px; border: 1px solid #ced4da; border-radius: 4px; }
+        .btn { padding: 6px 12px; border: 1px solid transparent; border-radius: 4px; cursor: pointer; }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-outline-secondary { border-color: #6c757d; color: #6c757d; }
+        .input-group { display: flex; }
+        .input-group .form-control { flex: 1; }
+        .input-group-append { display: flex; }
+        .mb-3 { margin-bottom: 1rem; }
+        .modal { display: none; position: fixed; z-index: 1050; top: 0; left: 0; width: 100%; height: 100%; }
+        .dwh-portal-spinner { display: none; }
+    </style>
+</head>
+<body>
+    <nav style="background: #0f1117; border-bottom: 1px solid rgba(255,255,255,0.07); padding: 8px 20px; color: #e8eaf0; display:flex; align-items:center; gap:10px; font-family:'Inter',sans-serif;">
+        <i class="fas fa-circle" style="color:#6c63ff; font-size:0.55rem;"></i>
+        <strong style="font-size:0.9rem; letter-spacing:0.03em;">Data Lineage Portal</strong>
+    </nav>
+
+    {% block content %}{% endblock %}
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <!-- vis.js -->
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <!-- Bootstrap JS (for modals) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    {% block javascripts %}{% endblock %}
+</body>
+</html>
