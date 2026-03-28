@@ -3,6 +3,7 @@
 A single-page web application for visualising end-to-end data lineage across Snowflake databases. Built with **Django** (backend API) and **React** (frontend), it renders an interactive graph that lets analysts trace how data flows from source tables to downstream datasets.
 
 ---
+<img width="1880" height="844" alt="Image" src="https://github.com/user-attachments/assets/0bc3f915-ce9f-4295-8191-8d798aae4f68" />
 
 ## Features
 
@@ -74,22 +75,14 @@ PGPASSWORD=<password>
 
 The app connects to the `data_observability` database and reads from `consumption.data_lineage_master_data`.
 
-### 3. Load lineage data (first time)
 
-If the table is empty, populate it from a CSV using `upload.py` (gitignored):
 
-```bash
-python upload.py
-```
-
-### 4. Run the application
+### 3. Run the application
 
 ```bash
 python manage.py migrate
 python manage.py runserver
 ```
-
-Open **http://127.0.0.1:8000** — the data lineage graph loads directly.
 
 ---
 
