@@ -3,7 +3,7 @@
 A single-page web application for visualising end-to-end data lineage across Snowflake databases. Built with **Django** (backend API) and **React** (frontend), it renders an interactive graph that lets analysts trace how data flows from source tables to downstream datasets.
 
 ---
-<img width="1880" height="844" alt="Image" src="https://github.com/user-attachments/assets/0bc3f915-ce9f-4295-8191-8d798aae4f68" />
+https://github.com/user-attachments/assets/5a8895a8-7920-4b76-8a05-968712f97a80
 
 ## Features
 
